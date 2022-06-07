@@ -5,11 +5,24 @@ import jwt from "jsonwebtoken";
 import mySecretKey from "./secret.js";
 
 const users = [
-  { id: 1, email: "todd@bocacode.com", password: "abc123" },
-  { id: 2, email: "damian@bocacode.com", password: "def456" },
-  { id: 3, email: "vitoria@bocacode.com", password: "ghi789" },
+  {
+    id: 1,
+    email: "todd@bocacode.com",
+    password: "$2b$10$P3aXGrZDKJftU6NwMDOYuuZxz.4xEWK1B0CdnTXN.bzXD05Cy.3w6",
+  },
+  {
+    id: 2,
+    email: "damian@bocacode.com",
+    password: "$2b$10$P3aXGrZDKJftU6NwMDOYuuKZOIjHYyUpb/QxMcBWsl5fzlLdqLHvW",
+  },
+  {
+    id: 3,
+    email: "vitoria@bocacode.com",
+    password: "$2b$10$P3aXGrZDKJftU6NwMDOYuuQ.Os7qLSOvZL3K.8MRfKSK/aA7aB29m",
+  },
 ]; //creating users for our db to test, fake db, this is where the db.collection
 // would be
+//added salt to the passwords and got the hashed password
 
 const app = express();
 app.use(cors());
@@ -25,34 +38,35 @@ app.post("/login", (req, res) => {
     (user) => user.email === email && user.password === password
   ); //do both email and pswd match?
   if (!user) {
-    res.status(401).send("Invalid email or password");
+    res.status(401).send({ error: "Invalid email or password" });
     return;
   }
   user.password = undefined; //remove pswd from user object
   //now we want to create and sign a token...
   const token = jwt.sign(user, mySecretKey, { expiresIn: "1h" });
-  res.send(token); //sending the token back
+  res.send({ token }); //sending the token back
 });
 app.get("/public", (req, res) => {
-  res.send("Welcome!");
+  res.send({ message: "Welcome!" });
 });
 app.get("/private", (req, res) => {
   //let's require a valid token to see this
   const token = req.headers.authorization || "";
   if (!token) {
     //if no token send error
-    res.status(401).send("You must be logged in to see this");
+    res.status(401).send({ error: "You must be logged in to see this" });
     return;
   }
   jwt.verify(token, mySecretKey, (err, decoded) => {
     if (err) {
-      res.status(401).send("You must use a valid token to see this");
+      res.status(401).send({ error: "You must use a valid token to see this" });
       return;
     }
     //here we know that the token is valid
-    res.send(`Welcome ${decoded.email}!`);
+    res.send({ message: `Welcome ${decoded.email}!` });
   });
 });
+//now we can use in postman to get token in a 'get', http://localhost:5050/
 
 export const api = functions.https.onRequest(app);
 
